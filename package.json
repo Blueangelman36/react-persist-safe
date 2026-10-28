@@ -1,0 +1,70 @@
+{
+  "name": "react-persist-safe",
+  "version": "0.1.0",
+  "description": "Browser storage that never overwrites data on mount, an ESLint rule that catches the bug, and a check for tabs running an old deploy.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Blueangelman36",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Blueangelman36/react-persist-safe.git"
+  },
+  "homepage": "https://github.com/Blueangelman36/react-persist-safe#readme",
+  "keywords": [
+    "react",
+    "localStorage",
+    "persistence",
+    "hook",
+    "eslint-plugin",
+    "data-loss",
+    "vite",
+    "deploy"
+  ],
+  "sideEffects": false,
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./eslint": {
+      "types": "./src/eslint.d.ts",
+      "default": "./src/eslint.js"
+    },
+    "./vite": {
+      "types": "./src/vite.d.ts",
+      "default": "./src/vite.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "eslint": ">=9",
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "eslint": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "10.13.0",
+    "jsdom": "30.1.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  }
+}

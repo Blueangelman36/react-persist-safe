@@ -1,0 +1,55 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      # The package's own rule runs on its own code and example.
+      - run: npm run lint
+
+  package:
+    # What `npm install react-persist-safe` gets, installed into an empty project the way a
+    # stranger would, and each entry point used from there.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm pack
+      - name: Install the tarball in an empty project and use every entry point
+        run: |
+          tarball="$PWD/$(ls react-persist-safe-*.tgz)"
+          mkdir -p "$RUNNER_TEMP/probe" && cd "$RUNNER_TEMP/probe"
+          npm init -y > /dev/null
+          npm pkg set type=module
+          npm install --no-audit --no-fund "$tarball" react eslint
+          node --input-type=module -e '
+            const m = await import("react-persist-safe");
+            for (const k of ["createPersisted", "usePersisted", "checkDeployVersion", "watchDeployVersion", "useDeployVersion"])
+              if (typeof m[k] !== "function") throw new Error("missing export " + k);
+            const { deployVersion } = await import("react-persist-safe/vite");
+            if (deployVersion().name !== "react-persist-safe:deploy-version") throw new Error("vite plugin");
+          '
+          printf 'import persistSafe from "react-persist-safe/eslint";\nexport default [{ files: ["**/*.jsx"], ...persistSafe.configs.recommended, languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } } }];\n' > eslint.config.js
+          printf 'export function Bad({ log }) {\n  useEffect(() => { localStorage.setItem("log", JSON.stringify(log)); }, [log]);\n  return <p />;\n}\n' > bad.jsx
+          if npx eslint bad.jsx; then
+            echo "::error::the installed rule did not catch a write on mount"; exit 1
+          fi
+          echo "the installed rule caught the write on mount, as it should"

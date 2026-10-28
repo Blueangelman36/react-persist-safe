@@ -1,0 +1,40 @@
+name: Release
+
+# A version tag publishes the package to npm with trusted publishing: no npm token is
+# stored anywhere. Needs the one-time setup in README "Publishing a release", ending with
+# the repository variable PUBLISH_TO_NPM set to `true`; until then the publish job is
+# skipped. Nothing here runs on a normal push.
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    # A repository variable, not an environment one: this `if` is evaluated before the
+    # job enters the environment, so an environment variable is never seen here.
+    if: vars.PUBLISH_TO_NPM == 'true'
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write  # the OIDC token trusted publishing uses, and nothing else
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24  # npm 11.5 or newer is needed for trusted publishing
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm test
+      # A tag that disagrees with package.json publishes a version number that means
+      # nothing, and npm never lets that number be used again.
+      - name: The tag, package.json and the ESLint plugin agree on the version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg=$(node -p "require('./package.json').version")
+          plugin=$(node --input-type=module -e "import p from './src/eslint.js'; console.log(p.meta.version)")
+          if [ "$tag" != "$pkg" ] || [ "$tag" != "$plugin" ]; then
+            echo "::error::tag v$tag, package.json $pkg, src/eslint.js meta.version $plugin"; exit 1
+          fi
+      - run: npm publish --provenance --access public
