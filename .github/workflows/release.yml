@@ -21,7 +21,7 @@ jobs:
       id-token: write  # the OIDC token trusted publishing uses, and nothing else
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24  # npm 11.5 or newer is needed for trusted publishing
           registry-url: https://registry.npmjs.org
